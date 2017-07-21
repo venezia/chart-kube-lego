@@ -11,4 +11,4 @@ maintainers:
     email: maratoid@gmail.com
   - name: Joe Julian
     email: me@joejulian.name
-    engine: gotpl
+engine: gotpl
