@@ -1,0 +1,63 @@
+{{- if .Capabilities.APIVersions.Has "rbac.authorization.k8s.io/v1beta1"}}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Release.Name }}-kube-lego-serviceaccount
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+metadata:
+  name: {{ .Release.Name }}-kube-lego-clusterrole
+rules:
+# Copied from https://github.com/jetstack/kube-lego/issues/99
+# must be able to get / create / delete services to manage the kube-lego-nginx service
+# TODO: this should actually be a namespaced Role, with a distinct name
+# More TODO: why does kube-lego even need to manage this? Why can't it be created
+# at instantiation time?
+- apiGroups:
+  - ""
+  resources:
+  - services
+  verbs:
+  - create
+  - get
+  - delete
+# Allow to do *everything* with ingresses. I can't find any use of ingress/status in the kube-lego
+# source code
+# TODO: this should be trimmed further, I don't see any use of PATCH and UPDATE insofar
+- apiGroups:
+  - extensions
+  resources:
+  - ingresses
+  verbs:
+  - get
+  - update
+  - create
+  - list
+  - patch
+  - delete
+  - watch
+# allow global access to manage secrets (to write the keys)
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - get
+  - create
+  - update
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ .Release.Name }}-kube-lego-clusterrole-nisa-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ .Release.Name }}-kube-lego-clusterrole
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Release.Name }}-kube-lego-serviceaccount
+    namespace: {{ .Release.Namespace}}
+{{- end}}

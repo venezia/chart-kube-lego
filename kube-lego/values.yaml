@@ -1,4 +1,3 @@
-image: jetstack/kube-lego:0.1.3
-email: maratoid+samsungjenkins@gmail.com
-domain: "jenkins.cnct.io"
+image: jetstack/kube-lego:0.1.5
+email: noreply@please.set.me
 api: https://acme-staging.api.letsencrypt.org/directory

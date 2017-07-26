@@ -21,6 +21,7 @@ spec:
         # Required for the auto-create kube-lego-nginx service to work.
         app: kube-lego
     spec:
+      serviceAccountName: {{ .Release.Name }}-kube-lego-serviceaccount
       containers:
         - name: kube-lego
           image: {{ .Values.image }}
