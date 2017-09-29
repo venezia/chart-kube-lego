@@ -47,6 +47,13 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: status.podIP
+            {{- if .Values.ingressClass }}
+            - name: LEGO_SUPPORTED_INGRESS_CLASS
+              valueFrom:
+                configMapKeyRef:
+                  name: kube-lego
+                  key: lego.ingressClass
+            {{- end }}
           readinessProbe:
             httpGet:
               path: /healthz

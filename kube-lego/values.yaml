@@ -1,3 +1,6 @@
 image: jetstack/kube-lego:0.1.5
 email: noreply@please.set.me
 api: https://acme-staging.api.letsencrypt.org/directory
+
+# Override the ingress class for this kube-lego to look at
+#ingressClass: myIngressClass

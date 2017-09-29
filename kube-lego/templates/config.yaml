@@ -6,4 +6,7 @@ data:
   lego.email: "{{ .Values.email }}"
   # configure letencrypt's production api
   lego.url: "{{ .Values.api }}"
+  {{- if .Values.ingressClass }}
+  lego.ingressClass: {{ .Values.ingressClass | quote }}
+  {{- end }}
 kind: ConfigMap
