@@ -1,44 +1,30 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: kube-lego
   labels:
-    heritage: {{.Release.Service | quote }}
-    release: {{.Release.Name | quote }}
-    chart: "{{.Chart.Name}}-{{.Chart.Version}}"
-    component: "{{.Release.Name}}-kube-lego"
-  annotations:
-    "helm.sh/created": {{.Release.Time.Seconds | quote }}
+    app: {{ template "name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    heritage: {{ .Release.Service }}
+    release: {{ .Release.Name }}
+  name: {{ template "fullname" . }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.replicaCount }}
   template:
     metadata:
+    {{- if .Values.podAnnotations }}
+      annotations:
+{{ toYaml .Values.podAnnotations | indent 8 }}
+    {{- end }}
       labels:
-        heritage: {{.Release.Service | quote }}
-        release: {{.Release.Name | quote }}
-        chart: "{{.Chart.Name}}-{{.Chart.Version}}"
-        component: "{{.Release.Name}}-kube-lego"
-        # Required for the auto-create kube-lego-nginx service to work.
-        app: kube-lego
+        app: {{ template "name" . }}
+        release: {{ .Release.Name }}
     spec:
-      serviceAccountName: {{ .Release.Name }}-kube-lego-serviceaccount
+      serviceAccountName: {{ if .Values.rbac.create }}{{ template "fullname" . }}{{ else }}"{{ .Values.rbac.serviceAccountName }}"{{ end }}
       containers:
-        - name: kube-lego
-          image: {{ .Values.image }}
-          imagePullPolicy: Always
-          ports:
-            - containerPort: 8080
+        - name: {{ template "name" . }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: "{{ .Values.image.pullPolicy }}"
           env:
-            - name: LEGO_EMAIL
-              valueFrom:
-                configMapKeyRef:
-                  name: kube-lego
-                  key: lego.email
-            - name: LEGO_URL
-              valueFrom:
-                configMapKeyRef:
-                  name: kube-lego
-                  key: lego.url
             - name: LEGO_NAMESPACE
               valueFrom:
                 fieldRef:
@@ -47,16 +33,22 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: status.podIP
-            {{- if .Values.ingressClass }}
-            - name: LEGO_SUPPORTED_INGRESS_CLASS
-              valueFrom:
-                configMapKeyRef:
-                  name: kube-lego
-                  key: lego.ingressClass
-            {{- end }}
+          # {{ required "config.LEGO_EMAIL is a required field" .Values.config.LEGO_EMAIL }}
+          {{- range $key, $value := .Values.config }}
+            - name: "{{ $key }}"
+              value: "{{ $value }}"
+          {{- end }}
+          ports:
+            - containerPort: {{ .Values.config.LEGO_PORT }}
           readinessProbe:
             httpGet:
               path: /healthz
-              port: 8080
+              port: {{ .Values.config.LEGO_PORT }}
             initialDelaySeconds: 5
             timeoutSeconds: 1
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+    {{- if .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.nodeSelector | indent 8 }}
+    {{- end }}
